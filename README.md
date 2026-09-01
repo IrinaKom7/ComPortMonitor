@@ -12,13 +12,16 @@ ComPortMonitor — специализированное графическое �
 
 Для корректной структуры кода выводится описание сегментов, их значения и подсвечивается разделитель GS с кодом 29 ASCII.
 
-<img width="652" height="472" alt="image" src="https://github.com/user-attachments/assets/8115855f-07de-4198-98e8-d80b79b990b5" />
+<img width="652" height="47" alt="image" src="https://github.com/user-attachments/assets/4bf551b4-d83c-4bd9-b18e-ee02b6705bf2" />
+
 
 Некорректные разделители FNC1 с кодом 232 ASCII будут подсвечены красным.
+
 ⚠️ **Важно!**
 Для определения фактического разделителя необходимо переключить сканер в режим виртуального COM-порта и передачи разделителей "как есть".
 
-<img width="652" height="472" alt="image" src="https://github.com/user-attachments/assets/3d308028-ecb5-4727-9634-99812a94357f" />
+<img width="652" height="472" alt="image" src="https://github.com/user-attachments/assets/0113e3e8-a612-449f-9bdf-3148311fc9bf" />
+
 
 
 ## Использование приложения
