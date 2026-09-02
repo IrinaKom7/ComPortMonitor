@@ -12,8 +12,7 @@ ComPortMonitor — специализированное графическое �
 
 Для корректной структуры кода выводится описание сегментов, их значения и подсвечивается разделитель GS с кодом 29 ASCII.
 
-<img width="652" height="472" alt="image" src="https://github.com/user-attachments/assets/4bf551b4-d83c-4bd9-b18e-ee02b6705bf2" />
-
+<img width="652" height="472" alt="image" src="https://github.com/user-attachments/assets/24a8f038-8527-40e3-b580-fbd57cdf68e0" />
 
 Некорректные разделители FNC1 с кодом 232 ASCII будут подсвечены красным.
 
