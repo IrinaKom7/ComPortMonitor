@@ -10,6 +10,48 @@
     $cr = [char]13  # ASCII group separator GS
     $lf = [char]10  # ASCII group separator FNC1
     $num_arr = 0..9 | ForEach-Object { "$_" }
+
+$ascii_0_32 = ConvertFrom-Json(
+@'
+[
+  { "Dec": 0,  "Str": "NUL" },
+  { "Dec": 1,  "Str": "SOH" },
+  { "Dec": 2,  "Str": "STX" },
+  { "Dec": 3,  "Str": "ETX" },
+  { "Dec": 4,  "Str": "EOT" },
+  { "Dec": 5,  "Str": "ENQ" },
+  { "Dec": 6,  "Str": "ACK" },
+  { "Dec": 7,  "Str": "BEL" },
+  { "Dec": 8,  "Str": "BS"  },
+  { "Dec": 9,  "Str": "HT"  },
+  { "Dec": 10, "Str": "LF"  },
+  { "Dec": 11, "Str": "VT"  },
+  { "Dec": 12, "Str": "FF"  },
+  { "Dec": 13, "Str": "CR"  },
+  { "Dec": 14, "Str": "SO"  },
+  { "Dec": 15, "Str": "SI"  },
+  { "Dec": 16, "Str": "DLE" },
+  { "Dec": 17, "Str": "DC1" },
+  { "Dec": 18, "Str": "DC2" },
+  { "Dec": 19, "Str": "DC3" },
+  { "Dec": 20, "Str": "DC4" },
+  { "Dec": 21, "Str": "NAK" },
+  { "Dec": 22, "Str": "SYN" },
+  { "Dec": 23, "Str": "ETB" },
+  { "Dec": 24, "Str": "CAN" },
+  { "Dec": 25, "Str": "EM"  },
+  { "Dec": 26, "Str": "SUB" },
+  { "Dec": 27, "Str": "ESC" },
+  { "Dec": 28, "Str": "FS"  },
+  { "Dec": 29, "Str": "GS"  },
+  { "Dec": 30, "Str": "RS"  },
+  { "Dec": 31, "Str": "US"  },
+  { "Dec": 32, "Str": "SPP"  }
+
+]
+'@)
+
+
     
     # Helper: create a new ParsedElement object
     function New-ParsedElement {
@@ -604,6 +646,7 @@
         }
 
         # After the parsing functions, we have $script:elementToReturn and $script:codestringToReturn
+        $script:elementToReturn.data = '|' + $script:elementToReturn.data + '|'
         return @{
             element   = $script:elementToReturn
             codestring = Clean-Codestring -stringToClean $script:codestringToReturn
@@ -706,7 +749,13 @@ function Add-BytesToOutput {
 
         if ($i -lt $bytes.Count - 1) {
             $rtb.SelectionColor = $rtb.ForeColor
-            $rtb.AppendText(" ")
+            $spec_ch = ($ascii_0_32 | ?{$_.Dec -eq $b}).Str;
+            if ($b -in 0..28 -or $b -in 30..32) {
+                $l_spec = $spec_ch.Length
+                $rtb.AppendText([string]::new(' ', $l_spec - 1))
+            }
+            else {$rtb.AppendText(' ')}
+
         }
     }
     $rtb.SelectionColor = $rtb.ForeColor
@@ -717,11 +766,19 @@ function Add-BytesToOutput {
         $b = $bytes[$i]
         $char = if ($b -ge 32 -and $b -le 126) { [char]$b } else { '.' }
 
-        if ($b -eq 29)      { $rtb.SelectionBackColor = 'Green'; $rtb.AppendText('GS') }
-        elseif ($b -eq 232) { $rtb.SelectionBackColor = 'Red' ; $rtb.AppendText('F1')}
-        else                { $rtb.SelectionBackColor = $rtb.BackColor; $rtb.AppendText( " " + $char)}
+#        if ($b -eq 29)      { $rtb.SelectionBackColor = 'Green'; $rtb.AppendText('GS') }
+#        elseif ($b -eq 232) { $rtb.SelectionBackColor = 'Red' ; $rtb.AppendText('F1')}
+#        else                { $rtb.SelectionBackColor = $rtb.BackColor; $rtb.AppendText( " " + $char)}
 
-        
+        switch ($true) {
+            ($b -eq 29) { $rtb.SelectionBackColor = 'Green'; $rtb.AppendText('GS') }
+            ($b -eq 232) { $rtb.SelectionBackColor = 'Red' ; $rtb.AppendText('F1') }
+            ($b -in 0..28 -or $b -in 30..32) {
+                $rtb.SelectionBackColor = 'Red'; 
+                $spec_ch = ($ascii_0_32 | ?{$_.Dec -eq $b}).Str;
+                $rtb.AppendText( $spec_ch); } #Float
+            default { $rtb.SelectionBackColor = $rtb.BackColor; $rtb.AppendText( " " + $char) }
+        }        
 
         if ($i -lt $bytes.Count - 1) {
             $rtb.SelectionColor = $rtb.ForeColor
@@ -755,7 +812,9 @@ function Add-BytesToOutput {
             | Format-Table -AutoSize | Out-String 
     }
 
+
     $rtb.AppendText($out_str)
+
 
     $rtb.ResumeLayout()
     # Автопрокрутка вниз
@@ -780,15 +839,6 @@ function Connect-Port {
         # Запускаем таймер для опроса порта
         $script:timer = New-Object System.Windows.Forms.Timer
         
-        
-        <#
-        Потенциальный deadlock или пропуск данных при чтении порта
-        Таймер опрашивает порт каждые 50 мс. Если данных много, 
-        буфер может переполниться, а Read может не успеть прочитать всё. 
-        Лучше использовать событие DataReceived, 
-        но оно требует синхронизации с UI. 
-        В вашем случае можно увеличить интервал или читать в цикле, пока есть данные.
-        #>
                 
         #$script:timer.Interval = 50   # миллисекунды
         $script:timer.Interval = 100   # миллисекунды
