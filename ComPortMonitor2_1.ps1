@@ -1,14 +1,7 @@
-﻿function Parse-Barcode {
-    #[CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Barcode
-    )
-
-    $gsChar = [char]29  # ASCII group separator GS
+﻿    $gsChar = [char]29  # ASCII group separator GS
     $fncChar = [char]232  # ASCII group separator FNC1
-    $cr = [char]13  # ASCII group separator GS
-    $lf = [char]10  # ASCII group separator FNC1
+    $cr = [char]13  # ASCII cr
+    $lf = [char]10  # ASCII lf
     $num_arr = 0..9 | ForEach-Object { "$_" }
 
 $ascii_0_32 = ConvertFrom-Json(
@@ -46,10 +39,20 @@ $ascii_0_32 = ConvertFrom-Json(
   { "Dec": 29, "Str": "GS"  },
   { "Dec": 30, "Str": "RS"  },
   { "Dec": 31, "Str": "US"  },
-  { "Dec": 32, "Str": "SPP"  }
+  { "Dec": 32, "Str": "SP"  }
 
 ]
 '@)
+
+
+function Parse-Barcode {
+    #[CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Barcode
+    )
+
+
 
 
     
@@ -202,7 +205,6 @@ $ascii_0_32 = ConvertFrom-Json(
 
         function Parse-FixedLength {
             param([string]$ai, [string]$title, [int]$length)
-            $tmp = New-ParsedElement -ai $ai -dataTitle $title -elementType "S"
             $script:elementToReturn = New-ParsedElement -ai $ai -dataTitle $title -elementType "S"
             $offset = $ai.Length
             $script:elementToReturn.data = $codestring.Substring($offset, $length)
@@ -744,17 +746,27 @@ function Add-BytesToOutput {
         if ($b -eq 29)      { $rtb.SelectionBackColor = 'Green' }
         elseif ($b -eq 232) { $rtb.SelectionBackColor = 'Red' }
         else                { $rtb.SelectionBackColor = $rtb.BackColor }
-
+        switch ($true) {
+            ($b -eq 29) { $rtb.SelectionBackColor = 'Green' }
+            ($b -eq 232) { $rtb.SelectionBackColor = 'Red'  }
+            ($b -in 0..28 -or $b -in 30..32) {$rtb.SelectionBackColor = 'Red' }
+            default { $rtb.SelectionBackColor = $rtb.BackColor }
+        }  
         $rtb.AppendText($hex)
 
         if ($i -lt $bytes.Count - 1) {
             $rtb.SelectionColor = $rtb.ForeColor
             $spec_ch = ($ascii_0_32 | ?{$_.Dec -eq $b}).Str;
-            if ($b -in 0..28 -or $b -in 30..32) {
+
+           if ($b -in 0..28 -or $b -in 30..32) {
                 $l_spec = $spec_ch.Length
                 $rtb.AppendText([string]::new(' ', $l_spec - 1))
             }
-            else {$rtb.AppendText(' ')}
+            else {
+                $rtb.AppendText(' ')
+            }
+
+
 
         }
     }
@@ -765,10 +777,6 @@ function Add-BytesToOutput {
     for ($i = 0; $i -lt $bytes.Count; $i++) {
         $b = $bytes[$i]
         $char = if ($b -ge 32 -and $b -le 126) { [char]$b } else { '.' }
-
-#        if ($b -eq 29)      { $rtb.SelectionBackColor = 'Green'; $rtb.AppendText('GS') }
-#        elseif ($b -eq 232) { $rtb.SelectionBackColor = 'Red' ; $rtb.AppendText('F1')}
-#        else                { $rtb.SelectionBackColor = $rtb.BackColor; $rtb.AppendText( " " + $char)}
 
         switch ($true) {
             ($b -eq 29) { $rtb.SelectionBackColor = 'Green'; $rtb.AppendText('GS') }
@@ -804,11 +812,11 @@ function Add-BytesToOutput {
     }
     if ($have_unit){
         $out_str = $tmp_res | Select-Object @{N='AI';E={$_.ai}}, @{N='Type';E={$_.dataTitle}} , `
-            @{N='Data';E={$_.data}}, @{N='Unit';E={$_.unit}}, @{N='Lenght';E={$_.len}}`
+            @{N='Data';E={$_.data}}, @{N='Unit';E={$_.unit}}, @{N='Length';E={$_.len}}`
             | Format-Table -AutoSize | Out-String 
     } else {
         $out_str = $tmp_res | Select-Object @{N='AI';E={$_.ai}}, @{N='Type';E={$_.dataTitle}} , `
-            @{N='Data';E={$_.data}}, @{N='Lenght';E={$_.len}}`
+            @{N='Data';E={$_.data}}, @{N='Length';E={$_.len}}`
             | Format-Table -AutoSize | Out-String 
     }
 
