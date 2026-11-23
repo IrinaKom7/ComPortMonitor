@@ -743,11 +743,8 @@ function Add-BytesToOutput {
         $b = $bytes[$i]
         $hex = "{0:X2}" -f $b
 
-        if ($b -eq 29)      { $rtb.SelectionBackColor = 'Green' }
-        elseif ($b -eq 232) { $rtb.SelectionBackColor = 'Red' }
-        else                { $rtb.SelectionBackColor = $rtb.BackColor }
         switch ($true) {
-            ($b -eq 29) { $rtb.SelectionBackColor = 'Green' }
+            ($b -eq 29) { if ($i -eq 0) { $rtb.SelectionBackColor = 'Red'} else  {$rtb.SelectionBackColor = 'Green' } }
             ($b -eq 232) { $rtb.SelectionBackColor = 'Red'  }
             ($b -in 0..28 -or $b -in 30..32) {$rtb.SelectionBackColor = 'Red' }
             default { $rtb.SelectionBackColor = $rtb.BackColor }
@@ -779,7 +776,8 @@ function Add-BytesToOutput {
         $char = if ($b -ge 32 -and $b -le 126) { [char]$b } else { '.' }
 
         switch ($true) {
-            ($b -eq 29) { $rtb.SelectionBackColor = 'Green'; $rtb.AppendText('GS') }
+            ($b -eq 29) { if ($i -eq 0) { $rtb.SelectionBackColor = 'Red'} else  {$rtb.SelectionBackColor = 'Green' };
+                            $rtb.AppendText('GS') }
             ($b -eq 232) { $rtb.SelectionBackColor = 'Red' ; $rtb.AppendText('F1') }
             ($b -in 0..28 -or $b -in 30..32) {
                 $rtb.SelectionBackColor = 'Red'; 
@@ -798,8 +796,6 @@ function Add-BytesToOutput {
 
     
     $barcode = ($bytes | ForEach-Object { [char]$_ }) -join ''
-    #Рекомендуется использовать явную кодировку
-    #$barcode = [System.Text.Encoding]::ASCII.GetString($bytes) ###########
 
 
     $tmp_res = (Parse-Barcode($barcode)).parsedCodeItems
